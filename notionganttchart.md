@@ -1,9 +1,14 @@
 Sample Notebook to show gantt chart using Notion’s timeline CSV
 ================
 
+-   [Original Notion Timeline page](#original-notion-timeline-page)
 -   [Read timeline CSV](#read-timeline-csv)
 -   [Format timeline data](#format-timeline-data)
 -   [Gantt chart](#gantt-chart)
+
+## Original Notion Timeline page
+
+<https://wax-finch-c14.notion.site/308d5a3eeb264c12a59dcd57557887f8?v=d45229a4c78e41b4a60af29529cfb8a3>
 
 ## Read timeline CSV
 
@@ -17,12 +22,11 @@ library(clock)
 dat <- read_csv("notion.csv")
 ```
 
-    ## Rows: 39 Columns: 5
+    ## Rows: 39 Columns: 4
 
     ## -- Column specification ---------------------------------------------------------------------
     ## Delimiter: ","
-    ## chr (4): Name, Date, Tags, 担当
-    ## lgl (1): Property
+    ## chr (4): Name, Assign, Date, Tag
 
     ## 
     ## i<U+00A0>Use `spec()` to retrieve the full column specification for this data.
@@ -39,10 +43,8 @@ dat2 <- dat %>%
     separate(Date,sep = "→", into = c("Start","End"), fill = "right") %>% 
     mutate(Start = mdy(Start),End = mdy(End)) %>% 
     mutate(End = if_else(is.na(End),Start,End)) %>% 
-    select(-Property) %>% 
     pivot_longer(c(Start, End), names_to = "State", values_to = "Date") %>% 
-    separate_rows(担当,sep = ",") %>% 
-    mutate(担当 = str_remove(担当,regex("[:space:]")))
+    separate_rows(Assign)
 ```
 
 Just for info. In R, unicode character can be printed by specifying its
@@ -58,20 +60,15 @@ code.
 
 Filtering for plot.
 
-``` r
-dat3 <- dat2 %>% 
-    filter(!is.na(担当) & Tags != "簡略表示") 
-```
-
 Count unique Names.
 
 ``` r
-yn <- length(unique(dat3$Name)) + 1
+yn <- length(unique(dat$Name)) + 1
 ```
 
 ``` r
-dat3 %>% 
-    ggplot(aes(x = Date, y = fct_reorder(Name,desc(Date)), color = 担当)) +
+dat2 %>% 
+    ggplot(aes(x = Date, y = fct_reorder(Name,desc(Date)), color = Tag)) +
     geom_line(size = 2) + geom_point(size = 2) + 
     scale_x_date(breaks = "1 week") + 
     theme(legend.position = "top", axis.text.x = element_text(angle = 90)) +
@@ -85,31 +82,31 @@ dat3 %>%
     annotate("rect", xmin = as.Date("2022-02-01"), xmax = as.Date("2022-02-28"), ymin = 0, ymax = yn, fill = "plum", alpha = 0.3)
 ```
 
-![](notionganttchart_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+![](notionganttchart_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 Merit of using R to generate gantt chart is that it can enable to filter
 some specific tasks.
 
 ``` r
-dat2 %>% filter(担当 %in% c("YCJ","金属加工")) %>% 
-    ggplot(aes(x = Date, y = fct_reorder(Name,desc(Date)), color = 担当)) +
+dat2 %>% filter(Assign %in% c("A","B","X")) %>% 
+    ggplot(aes(x = Date, y = fct_reorder(Name,desc(Date)), color = Assign)) +
     geom_line(size = 2) + geom_point(size = 2) + 
     scale_x_date(breaks = "1 week") + 
     theme(legend.position = "top", axis.text.x = element_text(angle = 90)) +
     labs(title = "Sample gantt chart filtered", y = "Task")
 ```
 
-![](notionganttchart_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](notionganttchart_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 Another filtering.
 
 ``` r
-dat2 %>% filter(Tags == "簡略表示") %>% 
-    ggplot(aes(x = Date, y = fct_reorder(Name,desc(Date)), color = 担当)) +
+dat2 %>% filter(Tag == "Release") %>% 
+    ggplot(aes(x = Date, y = fct_reorder(Name,desc(Date)), color = Assign)) +
     geom_line(size = 2) + geom_point(size = 2) + 
     scale_x_date(breaks = "1 week") + 
     theme(legend.position = "top", axis.text.x = element_text(angle = 90)) +
     labs(title = "Sample gantt chart filtered", y = "Task")
 ```
 
-![](notionganttchart_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](notionganttchart_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
