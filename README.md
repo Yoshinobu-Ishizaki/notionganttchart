@@ -4,6 +4,7 @@
 
 Redraw Gantt chart by R using Notion's Timeline which exported as Markdown & CSV.
 
+![](ganttchartsample.png)
 ## Usage
 
 1. Create Notion's timeline.
